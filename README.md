@@ -8,4 +8,5 @@ sentinel 1 and sentinel 2 missions.
 - [x] Create tif images from RGB bands (2, 3, 4)
 - [x] Create tif segmentation masks from geospatial data from PostGis
 - [ ] Crop tif images and masks by min/max coordinates from geospatial ESPG:4236 data
-- [ ] Split tif images and masks to smaller images of size 255x255 for training data 
+- [x] Split tif images and masks to smaller images of size 255x255 for training data 
+- [ ] Refactor notebooks for better readability 
