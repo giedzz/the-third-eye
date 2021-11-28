@@ -1,12 +1,15 @@
 import glob
 import os
 
+import numpy as np
 import rasterio
 import rasterio.warp
+from osgeo import gdal
 from rasterio.crs import CRS
 from rasterio.mask import mask
 
-from constants import DOWNLOAD_DIRECTORY, TIF_IMAGE_DIRECTORY, BUILDING_IMG_OUT
+from constants import DOWNLOAD_DIRECTORY, TIF_IMAGE_DIRECTORY, BUILDING_IMG_OUT, OUTPUT_BUILDING_PNG_PATH, \
+    BUILDING_IN_MUNICH_GEOJSON
 from utils.utils import create_geo_json_from_polygon, get_features
 
 
@@ -44,7 +47,7 @@ def convert_image_to_tif(title):
         except FileNotFoundError as e:
             print(e)
     os.makedirs(TIF_IMAGE_DIRECTORY, exist_ok=True)
-    true_color = rasterio.open(os.path.join(TIF_IMAGE_DIRECTORY, f'{title}.tif'), 'w', driver='Gtiff',
+    true_color = rasterio.open(os.path.join(TIF_IMAGE_DIRECTORY, f'{title}.tiff'), 'w', driver='Gtiff',
                                width=band4.width, height=band4.height,
                                count=3, crs=band4.crs, transform=band4.transform, dtype=band4.dtypes[0])
     true_color.write(band2.read(1), 3)
@@ -61,13 +64,18 @@ def crop_building_from_tif(buildings_df, title):
     # g2 = transform(project.transform, geom)
     # geo_json = create_geo_json_from_polygon(g2.wkt)
     # print(geo_json)
+    downloaded = False
     for key, row in buildings_df.iterrows():
         # polygon = transform(project.transform, row['st_astext'])
         # print(polygon)
 
 
 
+
         geo_json = create_geo_json_from_polygon(row['st_astext'])
+
+        # if key > 0:
+        #     continue
         # geo_json = BUILDING_IN_MUNICH_GEOJSON
 
         coords = get_features(geo_json)
@@ -76,27 +84,54 @@ def crop_building_from_tif(buildings_df, title):
             CRS.from_epsg(32632),
             coords
         )
-
         try:
-            with rasterio.open(os.path.join(TIF_IMAGE_DIRECTORY, f'{title}.tif')) as src:
-                out_img, out_transform = mask(src, shapes=coords, crop=True, pad_width=0.5)
+            with rasterio.open(os.path.join(TIF_IMAGE_DIRECTORY, f'{title}.tiff')) as src:
+                out_img, out_transform = mask(src, shapes=coords, crop=True, filled=False, pad_width=2)
                 out_meta = src.meta.copy()
-
+            if is_sorta_black(out_img):
+                continue
             out_meta.update({"driver": "GTiff", "height": out_img.shape[1], "width": out_img.shape[2],
                              "transform": out_transform})
             building_out_dir = os.path.join(BUILDING_IMG_OUT, str(key))
             os.makedirs(building_out_dir, exist_ok=True)
-            building_out_img_path = os.path.join(building_out_dir, f'{title}-{key}.tif')
+            building_out_img_path = os.path.join(building_out_dir, f'{title}-{key}.tiff')
             with rasterio.open(building_out_img_path, "w", **out_meta) as dest:
                 dest.write(out_img)
+            save_png_img(building_out_img_path)
+            downloaded = True
         except ValueError as e:
             print(e)
             continue
-        exit()
+        # exit()
+    return downloaded
 
+
+def save_png_img(input_geotiff_pth):
+    os.makedirs(OUTPUT_BUILDING_PNG_PATH, exist_ok=True)
+    output_png = os.path.join(OUTPUT_BUILDING_PNG_PATH, os.path.basename(input_geotiff_pth).replace('.tiff', '.jpg'))
+    scale = '-scale min_val max_val'
+    options_list = [
+        '-ot Byte',
+        '-of JPEG',
+        scale
+    ]
+    options_string = " ".join(options_list)
+    options_string = options_string.replace('\n', '')
+    gdal.Translate(output_png,
+                   input_geotiff_pth,
+                   options=options_string)
 
 
 def create_rgb_image_from_bands(title, buildings_df):
     convert_image_to_tif(title)
-    crop_building_from_tif(buildings_df, title)
+    return crop_building_from_tif(buildings_df, title)
 
+
+def is_sorta_black(arr, threshold=0.9):
+    tot = np.float(np.sum(arr))
+    if tot/arr.size > (1-threshold):
+        # print('is not black')
+        return False
+    else:
+        # print('is kinda black')
+        return True
