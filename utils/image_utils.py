@@ -79,14 +79,16 @@ def crop_building_from_tif(buildings_df, title):
         # geo_json = BUILDING_IN_MUNICH_GEOJSON
 
         coords = get_features(geo_json)
-        coords = rasterio.warp.transform_geom(
-            CRS.from_epsg(4326),
-            CRS.from_epsg(32632),
-            coords
-        )
+
         try:
             with rasterio.open(os.path.join(TIF_IMAGE_DIRECTORY, f'{title}.tiff')) as src:
+                coords = rasterio.warp.transform_geom(
+                    CRS.from_epsg(4326),
+                    CRS.from_epsg(str(src.crs).split(':')[1]),
+                    coords
+                )
                 out_img, out_transform = mask(src, shapes=coords, crop=True, filled=False, pad_width=2)
+
                 out_meta = src.meta.copy()
             if is_sorta_black(out_img):
                 continue
