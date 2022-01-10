@@ -3,7 +3,8 @@ import os
 ZIP_OUTPUT_FOLDER = 'out/unzip_directory'
 DOWNLOAD_DIRECTORY = 'data'
 TIF_IMAGE_DIRECTORY = os.path.join(DOWNLOAD_DIRECTORY, 'tif_images')
-BUILDING_IMG_OUT = 'data/tif_images/buildings/'
+BUILDING_IMG_OUT = 'data/rgb_images/buildings/'
+RASTER_INFO_TXT_PTH = 'data/txt_files'
 
 OUTPUT_BUILDING_PNG_PATH = 'data/tif_images/buildings_jpg/'
 
