@@ -40,8 +40,8 @@ def get_width_length(polygon_row, width_measure):
 
 
 def main():
-    input_fp = 'pgAdminResults/20m_limit_100000.csv'
-    output_fp = 'pgAdminResultsFiltered/20m_limit_100000_filtered.csv'
+    input_fp = 'pgAdminResults/20m_limit_100000_v2.csv'
+    output_fp = 'pgAdminResultsFiltered/20m_limit_100000_v2_filtered.csv'
     pg_out = pd.read_csv(input_fp)
 
     # Limits are in meters

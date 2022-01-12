@@ -13,9 +13,9 @@ from utils.utils import unzip_file, sentinel_image_overlap_at_least_one_building
 
 already_existing_files = read_already_downloaded_sentinel_data_titles('places.txt')
 
-pg_out = pd.read_csv('pgAdminResultsFiltered/20m_limit_100000_filtered.csv')
+pg_out = pd.read_csv('pgAdminResultsFiltered/20m_limit_100000_v2_filtered.csv')
 
-api = SentinelAPI('login', 'psw', 'https://scihub.copernicus.eu/dhus')
+api = SentinelAPI('twoman', 'twoman123', 'https://scihub.copernicus.eu/dhus')
 if not os.path.exists(RASTER_INFO_TXT_PTH):
     os.makedirs(RASTER_INFO_TXT_PTH)
 
@@ -34,7 +34,7 @@ for key, value in products.items():
     with open(os.path.join(RASTER_INFO_TXT_PTH, f'{title}.json'), 'w') as f:
         json.dump(value, f, indent=4, sort_keys=True, default=str)
     if counter > 10000:
-        print('Downloaded >10 images now exiting...')
+        print('Downloaded >10000 images now exiting...')
         exit()
 
     # download single scene by known product id
